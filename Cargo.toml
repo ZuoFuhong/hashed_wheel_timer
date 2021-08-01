@@ -1,0 +1,15 @@
+[package]
+name = "hashed_wheel_timer"
+version = "0.1.0"
+edition = "2018"
+authors = ["Mars Zuo <fuhongzuo@gmail.com>"]
+description = "Rust implementation of the Netty HashedWheelTimer."
+readme = "README.md"
+keywords = ["timer", "netty", "delay"]
+license = "MIT/Apache-2.0"
+repository = "https://github.com/ZuoFuhong/hashed_wheel_timer"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+
