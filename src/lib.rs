@@ -13,6 +13,7 @@ const WORKER_STATE_INIT: u8 = 0;
 const WORKER_STATE_STARTED: u8 = 1;
 const WORKER_STATE_SHUTDOWN: u8 = 2;
 
+#[derive(Clone)]
 pub struct WheelTimer {
     worker_state: Arc<AtomicU8>, // 0 - init, 1 - started, 2 - shutdown
     start_time: u64,
@@ -52,18 +53,17 @@ impl WheelTimer {
             )
                 .into());
         }
-        let worker_state = Arc::new(AtomicU8::new(WORKER_STATE_INIT));
-        let condvar = Arc::new((Mutex::new(0), Condvar::new()));
-
-        Ok(WheelTimer {
-            worker_state,
+        let mut timer = WheelTimer {
+            worker_state: Arc::new(AtomicU8::new(WORKER_STATE_INIT)),
             start_time: 0,
             tick_duration,
             ticks_per_wheel,
             mask,
-            condvar,
+            condvar: Arc::new((Mutex::new(0), Condvar::new())),
             sender: None,
-        })
+        };
+        timer.start().unwrap();
+        Ok(timer)
     }
 
     pub fn start(&mut self) -> Result<(), Box<dyn Error + '_>> {
@@ -137,8 +137,6 @@ impl WheelTimer {
     }
 
     pub fn new_timeout(&mut self, task: Box<dyn TimerTask + Send>, delay: Duration) {
-        self.start().unwrap();
-
         let deadline = system_time_unix() + delay.as_millis() as u64 - self.start_time;
         let timeout = WheelTimeout::new(task, deadline);
         let sender = self.sender.as_ref().unwrap();
@@ -271,7 +269,7 @@ fn create_wheel(ticks_per_wheel: u32) -> Result<Vec<WheelBucket>, Box<dyn Error>
     Ok(wheel)
 }
 
-fn system_time_unix() -> u64 {
+pub fn system_time_unix() -> u64 {
     SystemTime::now()
         .duration_since(SystemTime::UNIX_EPOCH)
         .unwrap()
@@ -285,10 +283,6 @@ pub struct WheelBucket {
 
 impl WheelBucket {
     fn add_timeout(&mut self, mut timeout: BucketTimeout) {
-        println!(
-            "WheelBucket add_timeout, task_id = {} deadline = {}",
-            timeout.task_id, timeout.deadline
-        );
         match self.head.as_ref() {
             None => {
                 let rc_timeout = Rc::new(RefCell::new(timeout));
@@ -418,20 +412,16 @@ impl BucketTimeout {
     }
 
     fn compare_exchange(&self, expected: u8, state: u8) -> bool {
-        let ret =
-            self.state
-                .compare_exchange(expected, state, Ordering::SeqCst, Ordering::Acquire);
+        let ret = self
+            .state
+            .compare_exchange(expected, state, Ordering::SeqCst, Ordering::Acquire);
         match ret {
-            Err(_) => {
-                false
-            }
-            Ok(_) => {
-                true
-            }
+            Err(_) => false,
+            Ok(_) => true,
         }
     }
 
-    fn expire(&self) {
+    fn expire(&mut self) {
         if !self.compare_exchange(ST_INIT, ST_EXPIRED) {
             return;
         }
@@ -440,7 +430,7 @@ impl BucketTimeout {
 }
 
 pub trait TimerTask {
-    fn run(&self);
+    fn run(&mut self);
 }
 
 struct WheelTimeout {
