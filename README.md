@@ -14,7 +14,7 @@ Put the following in your `Cargo.toml`:
 
 ```toml
 [dependencies]
-hashed_wheel_timer = "0.1.0"
+hashed_wheel_timer = "0.1.1"
 ```
 
 ### Example
@@ -37,7 +37,7 @@ impl ReaderIdleTimeoutTask {
 }
 
 impl TimerTask for ReaderIdleTimeoutTask {
-    fn run(&self) {
+    fn run(&mut self) {
         println!("ReaderIdleTimeoutTask expire, value {}", self.value)
     }
 }
