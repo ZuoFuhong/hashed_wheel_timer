@@ -1,6 +1,6 @@
 [package]
 name = "hashed_wheel_timer"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2018"
 authors = ["Mars Zuo <fuhongzuo@gmail.com>"]
 description = "Rust implementation of the Netty HashedWheelTimer."
