@@ -13,7 +13,7 @@ impl ReaderIdleTimeoutTask {
 }
 
 impl TimerTask for ReaderIdleTimeoutTask {
-    fn run(&self) {
+    fn run(&mut self) {
         println!("ReaderIdleTimeoutTask expire, value {}", self.value)
     }
 }
