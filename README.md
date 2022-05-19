@@ -2,6 +2,8 @@
 
 Rust implementation of the Netty HashedWheelTimer.
 
+Blog: https://www.cnblogs.com/marszuo/p/15120423.html
+
 **WARNING: This is a test product. Do not use it in a production deployment.**
 
 ## Build requirements
